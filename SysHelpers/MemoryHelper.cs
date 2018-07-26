@@ -22,7 +22,7 @@ namespace RockSnifferLib.SysHelpers
             {
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
-                    if(task == 0)
+                    if (task == 0)
                         MacOSAPI.task_for_pid_wrapper(pInfo.PID, out task);
                     IntPtr ptr;
                     int ret = MacOSAPI.vm_read_wrapper(task, (ulong)address, (ulong)bytes, out ptr, out bytesRead);
@@ -30,6 +30,7 @@ namespace RockSnifferLib.SysHelpers
                         Marshal.Copy(ptr, buffer, 0, bytesRead);
                     break;
                 case PlatformID.Win32Windows:
+                case PlatformID.Win32NT:
                     Win32API.ReadProcessMemory((int)pInfo.rsProcessHandle, (int)address, buffer, bytes, ref bytesRead);
                     break;
             }
@@ -69,10 +70,12 @@ namespace RockSnifferLib.SysHelpers
                         Marshal.Copy(ptr, buf, 0, bytesRead);
                     break;
                 case PlatformID.Win32Windows:
+                case PlatformID.Win32NT:
                     Win32API.ReadProcessMemory((int)pInfo.rsProcessHandle, (int)address, buf, bytes, ref bytesRead);
                     break;
             }
-            if(Logger.logMemoryReadout) {
+            if (Logger.logMemoryReadout)
+            {
                 Logger.Log(string.Format("ReadBytesFromMemory: Address: {0} Bytes: {1} BytesRead: {2}", address.ToString("X8"), bytes, bytesRead));
                 Logger.Log(string.Format("RawBytes: {0}", BitConverter.ToString(buf)));
             }
