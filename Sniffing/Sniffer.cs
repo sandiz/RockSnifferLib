@@ -91,6 +91,7 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
+                Logger.Log("DoMemoryReadout");
                 try
                 {
                     //Read data from memory
@@ -117,6 +118,7 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
+                Logger.Log("DoStateMachine");
                 try
                 {
                     //Update the state
@@ -129,7 +131,6 @@ namespace RockSnifferLib.Sniffing
                         Logger.LogError("Error while processing state machine: {0} {1}", e.GetType(), e.Message);
                     }
                 }
-
                 //Delay for 100 milliseconds
                 await Task.Delay(100);
             }
@@ -139,6 +140,7 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
+                Logger.Log("DoSniffing");
                 try
                 {
                     //Sniff for song details
@@ -168,7 +170,8 @@ namespace RockSnifferLib.Sniffing
             if (currentState == SnifferState.IN_MENUS || (currentCDLCDetails.songID.ToLowerInvariant() != currentMemoryReadout.songID.ToLowerInvariant()))
             {
                 //Get a list of files rocksmith is accessing
-                List<string> dlcFiles = SniffFileHandles();
+                //TODO: fix for mac
+                List<string> dlcFiles = new List<string>();
 
                 //If the list exists
                 if (dlcFiles != null && dlcFiles.Count > 0)

@@ -9,15 +9,21 @@ namespace RockSnifferLib.RSHelpers
         private RSMemoryReadout readout = new RSMemoryReadout();
         private RSMemoryReadout prevReadout = new RSMemoryReadout();
 
-        //Process handles
-        public Process rsProcess;
-        private IntPtr rsProcessHandle;
+        public struct ProcessInfo
+        {
+            //Process handles
+            public Process rsProcess;
+            public IntPtr rsProcessHandle;
+            public ulong PID;
+        }
+        ProcessInfo PInfo = new ProcessInfo();
 
         public RSMemoryReader(Process rsProcess)
         {
-            this.rsProcess = rsProcess;
+            this.PInfo.rsProcess = rsProcess;
 
-            rsProcessHandle = rsProcess.Handle;
+            this.PInfo.rsProcessHandle = rsProcess.Handle;
+            this.PInfo.PID = (ulong)rsProcess.Id;
         }
 
         /// <summary>
@@ -33,7 +39,7 @@ namespace RockSnifferLib.RSHelpers
             //Candidate #1: FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 })
             //Candidate #2: FollowPointers(0x00F80CEC, new int[] { 0x598, 0x1B8, 0x0 })
             //Candidate #3: FollowPointers(0x00F5DAFC, new int[] { 0x608, 0x1B8, 0x0 })
-            byte[] bytes = MemoryHelper.ReadBytesFromMemory(rsProcessHandle, FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 }), 128);
+            byte[] bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 }), 128);
 
             //Find the first 0 in the array
             int end = Array.IndexOf<byte>(bytes, 0);
@@ -89,7 +95,7 @@ namespace RockSnifferLib.RSHelpers
         private IntPtr FollowPointers(int entryAddress, int[] offsets)
         {
             //Get base address
-            IntPtr baseAddress = rsProcess.MainModule.BaseAddress;
+            IntPtr baseAddress = PInfo.rsProcess.MainModule.BaseAddress;
 
             //Add entry address
             IntPtr finalAddress = IntPtr.Add(baseAddress, entryAddress);
@@ -97,7 +103,7 @@ namespace RockSnifferLib.RSHelpers
             //Add offsets
             foreach (int offset in offsets)
             {
-                finalAddress = MemoryHelper.FollowPointer(rsProcessHandle, finalAddress, offset);
+                finalAddress = MemoryHelper.FollowPointer(PInfo, finalAddress, offset);
             }
 
             //Return the final address
@@ -107,7 +113,7 @@ namespace RockSnifferLib.RSHelpers
         private void ReadSongTimer(IntPtr timerAddress)
         {
             //Read float from memory and assign field on readout
-            readout.songTimer = MemoryHelper.ReadFloatFromMemory(rsProcessHandle, timerAddress);
+            readout.songTimer = MemoryHelper.ReadFloatFromMemory(PInfo, timerAddress);
         }
 
         private void ReadNoteData(IntPtr structAddress)
@@ -123,12 +129,12 @@ namespace RockSnifferLib.RSHelpers
             //0014 - missed note streak
 
             //Read and assign all fields
-            readout.totalNotesHit = MemoryHelper.ReadInt32FromMemory(rsProcessHandle, structAddress);
-            readout.currentHitStreak = MemoryHelper.ReadInt32FromMemory(rsProcessHandle, IntPtr.Add(structAddress, 0x0004));
-            readout.unknown = MemoryHelper.ReadInt32FromMemory(rsProcessHandle, IntPtr.Add(structAddress, 0x0008));
-            readout.highestHitStreak = MemoryHelper.ReadInt32FromMemory(rsProcessHandle, IntPtr.Add(structAddress, 0x000C));
-            readout.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(rsProcessHandle, IntPtr.Add(structAddress, 0x0010));
-            readout.currentMissStreak = MemoryHelper.ReadInt32FromMemory(rsProcessHandle, IntPtr.Add(structAddress, 0x0014));
+            readout.totalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, structAddress);
+            readout.currentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0004));
+            readout.unknown = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0008));
+            readout.highestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x000C));
+            readout.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0010));
+            readout.currentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0014));
         }
     }
 }

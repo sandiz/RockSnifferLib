@@ -4,7 +4,18 @@ using System.Text;
 
 namespace RockSnifferLib.SysHelpers
 {
-    public class Win32API
+    public static class MacOSAPI
+    {
+        //vm_read
+        //get_task_for_pid
+        [DllImport("libMacOSWrapper.dylib")]
+        public static extern int vm_read_wrapper(uint TargetTask, ulong Address, ulong Size, out IntPtr Data, out int DataCount);
+        [DllImport("libMacOSWrapper.dylib")]
+        public static extern int mach_vm_region_recurse_wrapper(ulong ProcessPid, out ulong Offset);
+        [DllImport("libMacOSWrapper.dylib")]
+        public static extern int task_for_pid_wrapper(ulong ProcessPid, out uint Task);
+    }
+    public static class Win32API
     {
         [DllImport("ntdll.dll")]
         public static extern int NtQueryObject(IntPtr ObjectHandle, int ObjectInformationClass, IntPtr ObjectInformation, int ObjectInformationLength, ref int returnLength);
@@ -107,7 +118,7 @@ namespace RockSnifferLib.SysHelpers
         { // Information Class 1
             public UNICODE_STRING Name;
         }
-        
+
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct UNICODE_STRING
         {
@@ -116,14 +127,16 @@ namespace RockSnifferLib.SysHelpers
             /// <summary>
             /// The length, in bytes, of the string stored in Buffer. If the string is null-terminated, Length does not include the trailing null character.
             /// </summary>
-            public ushort Length {
+            public ushort Length
+            {
                 get { return (ushort)Marshal.ReadInt16(this, 0); }
             }
 
             /// <summary>
             /// The length, in bytes, of Buffer.
             /// </summary>
-            public ushort MaximumLength {
+            public ushort MaximumLength
+            {
                 get { return (ushort)Marshal.ReadInt16(this, 2); }
             }
 
