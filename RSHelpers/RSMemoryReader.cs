@@ -1,4 +1,5 @@
 ﻿using RockSnifferLib.SysHelpers;
+using RockSnifferLib.Logging;
 using System;
 using System.Diagnostics;
 
@@ -96,16 +97,21 @@ namespace RockSnifferLib.RSHelpers
         {
             //Get base address
             IntPtr baseAddress = PInfo.rsProcess.MainModule.BaseAddress;
+            ulong Offset;
+            MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out Offset);
+            Logger.Log("MacVM~Offset: " + (IntPtr)Offset);
+            baseAddress = (IntPtr)Offset;
 
             //Add entry address
             IntPtr finalAddress = IntPtr.Add(baseAddress, entryAddress);
+            Logger.Log("Base Address: {0} EntryAdress: {1} Final Address: {2}", baseAddress.ToString("X8"), entryAddress.ToString("X8"), finalAddress.ToString("X8"));
 
             //Add offsets
             foreach (int offset in offsets)
             {
                 finalAddress = MemoryHelper.FollowPointer(PInfo, finalAddress, offset);
             }
-
+            Logger.Log("OffsetFinalized Address: " + finalAddress.ToString("X8"));
             //Return the final address
             return finalAddress;
         }

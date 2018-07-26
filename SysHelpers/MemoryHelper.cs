@@ -115,6 +115,7 @@ namespace RockSnifferLib.SysHelpers
         /// <returns></returns>
         public static IntPtr FollowPointer(RSMemoryReader.ProcessInfo processHandle, IntPtr address, int offset)
         {
+            Logger.Log(string.Format("PreFollow Pointer: Address:{0} offset: {1}", address.ToString("X8"), offset));
             IntPtr readPointer = (IntPtr)ReadInt32FromMemory(processHandle, address);
 
             return IntPtr.Add(readPointer, offset);

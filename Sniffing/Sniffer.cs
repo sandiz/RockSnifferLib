@@ -91,7 +91,7 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
-                Logger.Log("DoMemoryReadout");
+                //Logger.Log("DoMemoryReadout");
                 try
                 {
                     //Read data from memory
@@ -118,7 +118,7 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
-                Logger.Log("DoStateMachine");
+                //Logger.Log("DoStateMachine");
                 try
                 {
                     //Update the state
@@ -140,7 +140,7 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
-                Logger.Log("DoSniffing");
+                //Logger.Log("DoSniffing");
                 try
                 {
                     //Sniff for song details
@@ -187,6 +187,7 @@ namespace RockSnifferLib.Sniffing
                 }
             }
         }
+
 
         /// <summary>
         /// Stops the sniffer, stopping all async tasks
