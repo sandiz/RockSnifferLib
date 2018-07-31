@@ -90,11 +90,10 @@ namespace RockSnifferLib.Sniffing
 
         public void DoPointerScan()
         {
-            uint Target = 0xF08DB80;
-            uint maxAdd = 1024;
+            int Target = 0x34EC9650;
+            uint maxAdd = 512;
             uint maxDepth = 3;
-            List<uint> output = memReader.PointerScan(Target, maxAdd, maxDepth);
-            Logger.Log("Scan Complete, Results: " + output.Count);
+            memReader.PointerScan(Target, maxAdd, maxDepth);
         }
 
         private async void DoMemoryReadout()

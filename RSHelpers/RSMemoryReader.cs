@@ -3,6 +3,10 @@ using RockSnifferLib.Logging;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RockSnifferLib.RSHelpers
 {
@@ -94,66 +98,78 @@ namespace RockSnifferLib.RSHelpers
             return prevReadout;
         }
 
-        public List<uint> PointerScan(uint Target, uint maxAdd, uint maxDepth)
+        public void PointerScan(int Target, uint maxAdd, uint maxDepth)
         {
-            ulong baseadd;
+            //0x00F5C494, new int[] { 0xBC, 0x0 }
+            IntPtr baseAddress = PInfo.rsProcess.MainModule.BaseAddress;
+            int baseadd = (int)(baseAddress.ToInt32() + 0xF5D384);
+            //ulong baseadd;
             long end = 0x7FFFFFF;
-            end = 0x1004;
-            maxAdd = 5;
-            MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out baseadd);
-            Logger.Log("Starting pointer scan: base: " + baseadd.ToString("X8"));
-            for (uint address = (uint)baseadd; address <= end; address += 4)
+            //end = baseadd;
+            //maxAdd = 5;
+            //MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out baseadd);
+            List<int> addresses = new List<int>();
+            for (int address = baseadd; address <= end; address += 4)
+                addresses.Add(address);
+            Parallel.For(0, addresses.Count, (i, loopstate) =>
             {
-                List<uint> ret = rScan(address, Target, maxAdd, maxDepth, 1);
+                int address = addresses[i];
+                //Logger.Log(string.Format("Starting pointer scan: base: {0} end: {1}", address.ToString("X8"), end.ToString("X8")));
+                List<int> ret = rScan(address, Target, maxAdd, maxDepth, 1);
                 if (ret.Count > 0)
                 {
                     ret.Insert(0, address);
-                    return ret;
+                    Logger.Log("Scan Complete, Results: " + ret.Count);
+                    ret.ForEach((t) => Logger.Log(t.ToString("X8")));
+                    loopstate.Stop();
                 }
-            }
-            return new List<uint>();
+            });
+            //return new List<int>();
         }
-        List<uint> rScan(uint address, uint Target, uint maxAdd, uint maxDepth, uint currDepth)
+        List<int> rScan(int address, int Target, uint maxAdd, uint maxDepth, uint currDepth)
         {
-            if (currDepth == 1)
-                Logger.Log("Base Scan: " + address.ToString("X8"));
-            else
-                Logger.Log(string.Format(new String('\t', (int)currDepth) + "Depth Scan: Depth: {0} Address: {1} ", currDepth, address.ToString("X8")));
+            //if (currDepth == 1)
+            //    Logger.Log("Base Scan: " + address.ToString("X8"));
+            //else if(currDepth <= 2)
+            //{
+            //    Logger.Log(string.Format(new String('\t', (int)currDepth) + "Depth Scan: Depth: {0} Address: {1} ", currDepth, address.ToString("X8")));
+            //}
+                int value = MemoryHelper.ReadInt32FromMemory(PInfo, new IntPtr(address));
 
-            uint value = (uint)MemoryHelper.ReadInt32FromMemory(PInfo, new IntPtr(address));
-
-            for (int offset = 0; offset <= maxAdd; offset += 4)
-            {
-                if (value + offset == Target)
+                for (int offset = 0; offset <= maxAdd; offset += 4)
                 {
-                    return new List<uint> { (uint)offset };
-                }
-            }
-            if (currDepth < maxDepth)
-            {
-                currDepth++;
-                for (uint offset = 0; offset <= maxAdd; offset += 4)
-                {
-                    Logger.Log(new String('\t', (int)currDepth) + "Offset: " + offset);
-                    List<uint> ret = rScan(value + offset, Target, maxAdd, maxDepth, currDepth);
-                    if (ret.Count > 0)
+                    if (value + offset == Target)
                     {
-                        ret.Insert(0, (uint)offset);
-                        return ret;
+                        Logger.Log(string.Format("Found Match Value: {0} Offset: {1} Target: {2}", value.ToString("X8"), offset, Target.ToString("X8")));
+                        return new List<int> { offset };
                     }
                 }
-            }
-            return new List<uint>();
+                if (currDepth < maxDepth)
+                {
+                    currDepth++;
+                    for (int offset = 0; offset <= maxAdd; offset += 4)
+                    {
+                        //Logger.Log(new String('\t', (int)currDepth) + "Offset: " + offset);
+                        List<int> ret = rScan(value + offset, Target, maxAdd, maxDepth, currDepth);
+                        if (ret.Count > 0)
+                        {
+                            ret.Insert(0, offset);
+                            return ret;
+                        }
+                    }
+                }
+           
+            return new List<int>();
         }
 
         private IntPtr FollowPointers(int entryAddress, int[] offsets)
         {
             //Get base address
             IntPtr baseAddress = PInfo.rsProcess.MainModule.BaseAddress;
-            ulong Offset;
-            MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out Offset);
-            Logger.Log("MacVM~Offset: " + (IntPtr)Offset);
-            baseAddress = (IntPtr)Offset;
+            //ulong Offset;
+            //MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out Offset);
+           // Logger.Log("MacVM~Offset: " + (IntPtr)Offset);
+            //baseAddress = (IntPtr)Offset;
 
             //Add entry address
             IntPtr finalAddress = IntPtr.Add(baseAddress, entryAddress);
