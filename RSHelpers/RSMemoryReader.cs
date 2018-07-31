@@ -2,6 +2,7 @@
 using RockSnifferLib.Logging;
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace RockSnifferLib.RSHelpers
 {
@@ -91,6 +92,58 @@ namespace RockSnifferLib.RSHelpers
             prevReadout.songTimer = readout.songTimer;
 
             return prevReadout;
+        }
+
+        public List<uint> PointerScan(uint Target, uint maxAdd, uint maxDepth)
+        {
+            ulong baseadd;
+            long end = 0x7FFFFFF;
+            end = 0x1004;
+            maxAdd = 5;
+            MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out baseadd);
+            Logger.Log("Starting pointer scan: base: " + baseadd.ToString("X8"));
+            for (uint address = (uint)baseadd; address <= end; address += 4)
+            {
+                List<uint> ret = rScan(address, Target, maxAdd, maxDepth, 1);
+                if (ret.Count > 0)
+                {
+                    ret.Insert(0, address);
+                    return ret;
+                }
+            }
+            return new List<uint>();
+        }
+        List<uint> rScan(uint address, uint Target, uint maxAdd, uint maxDepth, uint currDepth)
+        {
+            if (currDepth == 1)
+                Logger.Log("Base Scan: " + address.ToString("X8"));
+            else
+                Logger.Log(string.Format(new String('\t', (int)currDepth) + "Depth Scan: Depth: {0} Address: {1} ", currDepth, address.ToString("X8")));
+
+            uint value = (uint)MemoryHelper.ReadInt32FromMemory(PInfo, new IntPtr(address));
+
+            for (int offset = 0; offset <= maxAdd; offset += 4)
+            {
+                if (value + offset == Target)
+                {
+                    return new List<uint> { (uint)offset };
+                }
+            }
+            if (currDepth < maxDepth)
+            {
+                currDepth++;
+                for (uint offset = 0; offset <= maxAdd; offset += 4)
+                {
+                    Logger.Log(new String('\t', (int)currDepth) + "Offset: " + offset);
+                    List<uint> ret = rScan(value + offset, Target, maxAdd, maxDepth, currDepth);
+                    if (ret.Count > 0)
+                    {
+                        ret.Insert(0, (uint)offset);
+                        return ret;
+                    }
+                }
+            }
+            return new List<uint>();
         }
 
         private IntPtr FollowPointers(int entryAddress, int[] offsets)
