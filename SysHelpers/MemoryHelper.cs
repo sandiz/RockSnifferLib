@@ -36,8 +36,8 @@ namespace RockSnifferLib.SysHelpers
             }
             if (Logger.logMemoryReadout)
             {
-                Logger.Log(string.Format("ReadBytesFromMemory: Address: {0} Bytes: {1} BytesRead: {2}", address.ToString("X8"), bytes, bytesRead));
-                Logger.Log(string.Format("RawBytes: {0}", BitConverter.ToString(buffer)));
+                //Logger.Log(string.Format("ReadBytesFromMemory: Address: {0} Bytes: {1} BytesRead: {2}", address.ToString("X8"), bytes, bytesRead));
+                //Logger.Log(string.Format("RawBytes: {0}", BitConverter.ToString(buffer)));
             }
             return bytesRead;
         }
@@ -76,8 +76,8 @@ namespace RockSnifferLib.SysHelpers
             }
             if (Logger.logMemoryReadout)
             {
-                Logger.Log(string.Format("ReadBytesFromMemory: Address: {0} Bytes: {1} BytesRead: {2}", address.ToString("X8"), bytes, bytesRead));
-                Logger.Log(string.Format("RawBytes: {0}", BitConverter.ToString(buf)));
+                //Logger.Log(string.Format("ReadBytesFromMemory: Address: {0} Bytes: {1} BytesRead: {2}", address.ToString("X8"), bytes, bytesRead));
+                //Logger.Log(string.Format("RawBytes: {0}", BitConverter.ToString(buf)));
             }
             return buf;
         }
@@ -115,7 +115,7 @@ namespace RockSnifferLib.SysHelpers
         /// <returns></returns>
         public static IntPtr FollowPointer(RSMemoryReader.ProcessInfo processHandle, IntPtr address, int offset)
         {
-            Logger.Log(string.Format("PreFollow Pointer: Address:{0} offset: {1}", address.ToString("X8"), offset));
+            //Logger.Log(string.Format("PreFollow Pointer: Address:{0} offset: {1}", address.ToString("X8"), offset));
             IntPtr readPointer = (IntPtr)ReadInt32FromMemory(processHandle, address);
 
             return IntPtr.Add(readPointer, offset);

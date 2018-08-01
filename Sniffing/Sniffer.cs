@@ -82,15 +82,19 @@ namespace RockSnifferLib.Sniffing
 
             memReader = new RSMemoryReader(rsProcess);
 
-            DoPointerScan();
-            //DoMemoryReadout();
-            //DoStateMachine();
-            //DoSniffing();
+            if (Environment.GetCommandLineArgs().Contains("-pointerscan"))
+                DoPointerScan();
+            else
+            {
+                DoMemoryReadout();
+                DoStateMachine();
+                DoSniffing();
+            }
         }
 
         public void DoPointerScan()
         {
-            int Target = 0x34EC9650;
+            int Target = 0x33EB4260;
             uint maxAdd = 512;
             uint maxDepth = 3;
             memReader.PointerScan(Target, maxAdd, maxDepth);
