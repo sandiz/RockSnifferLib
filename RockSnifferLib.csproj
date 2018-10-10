@@ -119,12 +119,14 @@
     <Compile Include="SysHelpers\FileDetails.cs" />
     <Compile Include="SysHelpers\MemoryHelper.cs" />
     <Compile Include="SysHelpers\Win32API.cs" />
+    <Compile Include="SysHelpers\MacOSAPI.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="lib\libMacOSWrapper.dylib">
-      <Link>libMacOSWrapper.dylib</Link>
+    <None Include="SysHelpers\libMacOSAPI.dylib">
+      <Link>libMacOSAPI.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

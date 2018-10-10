@@ -89,9 +89,9 @@ namespace RockSnifferLib.Sniffing
 
         private async void DoMemoryReadout()
         {
+            float lastTimer = currentMemoryReadout.songTimer;
             while (running)
             {
-                //Logger.Log("DoMemoryReadout");
                 try
                 {
                     //Read data from memory
@@ -107,6 +107,18 @@ namespace RockSnifferLib.Sniffing
 
                 OnMemoryReadout?.Invoke(this, new OnMemoryReadoutArgs() { memoryReadout = currentMemoryReadout });
 
+                switch (Environment.OSVersion.Platform)
+                {
+                    case PlatformID.MacOSX:
+                    case PlatformID.Unix:
+                        if (currentMemoryReadout.songTimer != lastTimer)
+                        {
+                            // scan for note data from memory if required
+                            memReader.DoPointerScan();
+                            lastTimer = currentMemoryReadout.songTimer;
+                        }
+                        break;
+                }
                 //Print memreadout if debug is enabled
                 currentMemoryReadout.Print();
 
@@ -118,7 +130,6 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
-                //Logger.Log("DoStateMachine");
                 try
                 {
                     //Update the state
@@ -140,7 +151,6 @@ namespace RockSnifferLib.Sniffing
         {
             while (running)
             {
-                //Logger.Log("DoSniffing");
                 try
                 {
                     //Sniff for song details
@@ -171,7 +181,7 @@ namespace RockSnifferLib.Sniffing
             {
                 //Get a list of files rocksmith is accessing
                 //TODO: fix for mac
-                List<string> dlcFiles = new List<string>();
+                List<string> dlcFiles = new List<string>();//SniffFileHandles();
 
                 //If the list exists
                 if (dlcFiles != null && dlcFiles.Count > 0)

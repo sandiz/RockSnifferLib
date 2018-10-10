@@ -7,12 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		27B5B4AE207F42B20035151F /* apiwrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 27B5B4AD207F42B20035151F /* apiwrapper.c */; };
+		270291C421753F8D00A19775 /* libMacOSAPI.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 27B5B4A6207F422E0035151F /* libMacOSAPI.dylib */; };
+		27B5B4AE207F42B20035151F /* API.c in Sources */ = {isa = PBXBuildFile; fileRef = 27B5B4AD207F42B20035151F /* API.c */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		270291C221753ED200A19775 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(PROJECT_DIR)/..";
+			dstSubfolderSpec = 0;
+			files = (
+				270291C421753F8D00A19775 /* libMacOSAPI.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		27B5B4A6207F422E0035151F /* libMacOSWrapper.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; name = libMacOSWrapper.dylib; path = ../../../../../../../../Projects/RockSniffer/RockSnifferLib/lib/libMacOSWrapper.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		27B5B4AD207F42B20035151F /* apiwrapper.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = apiwrapper.c; sourceTree = "<group>"; };
+		27B5B4A6207F422E0035151F /* libMacOSAPI.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMacOSAPI.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		27B5B4AD207F42B20035151F /* API.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = API.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,7 +43,7 @@
 		27B5B49D207F422E0035151F = {
 			isa = PBXGroup;
 			children = (
-				27B5B4AD207F42B20035151F /* apiwrapper.c */,
+				27B5B4AD207F42B20035151F /* API.c */,
 				27B5B4A7207F422E0035151F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -37,7 +51,7 @@
 		27B5B4A7207F422E0035151F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				27B5B4A6207F422E0035151F /* libMacOSWrapper.dylib */,
+				27B5B4A6207F422E0035151F /* libMacOSAPI.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,21 +69,22 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		27B5B4A5207F422E0035151F /* MacOSWrapper */ = {
+		27B5B4A5207F422E0035151F /* MacOSAPI */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 27B5B4AA207F422E0035151F /* Build configuration list for PBXNativeTarget "MacOSWrapper" */;
+			buildConfigurationList = 27B5B4AA207F422E0035151F /* Build configuration list for PBXNativeTarget "MacOSAPI" */;
 			buildPhases = (
 				27B5B4A2207F422E0035151F /* Sources */,
 				27B5B4A3207F422E0035151F /* Frameworks */,
 				27B5B4A4207F422E0035151F /* Headers */,
+				270291C221753ED200A19775 /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = MacOSWrapper;
+			name = MacOSAPI;
 			productName = MacOSWrapper;
-			productReference = 27B5B4A6207F422E0035151F /* libMacOSWrapper.dylib */;
+			productReference = 27B5B4A6207F422E0035151F /* libMacOSAPI.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
 /* End PBXNativeTarget section */
@@ -86,7 +101,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 27B5B4A1207F422E0035151F /* Build configuration list for PBXProject "MacOSWrapper" */;
+			buildConfigurationList = 27B5B4A1207F422E0035151F /* Build configuration list for PBXProject "MacOSAPI" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -98,7 +113,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				27B5B4A5207F422E0035151F /* MacOSWrapper */,
+				27B5B4A5207F422E0035151F /* MacOSAPI */,
 			);
 		};
 /* End PBXProject section */
@@ -108,7 +123,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27B5B4AE207F42B20035151F /* apiwrapper.c in Sources */,
+				27B5B4AE207F42B20035151F /* API.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,7 +272,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		27B5B4A1207F422E0035151F /* Build configuration list for PBXProject "MacOSWrapper" */ = {
+		27B5B4A1207F422E0035151F /* Build configuration list for PBXProject "MacOSAPI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				27B5B4A8207F422E0035151F /* Debug */,
@@ -266,7 +281,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		27B5B4AA207F422E0035151F /* Build configuration list for PBXNativeTarget "MacOSWrapper" */ = {
+		27B5B4AA207F422E0035151F /* Build configuration list for PBXNativeTarget "MacOSAPI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				27B5B4AB207F422E0035151F /* Debug */,

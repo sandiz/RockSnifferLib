@@ -4,17 +4,6 @@ using System.Text;
 
 namespace RockSnifferLib.SysHelpers
 {
-    public static class MacOSAPI
-    {
-        //vm_read
-        //get_task_for_pid
-        [DllImport("libMacOSWrapper.dylib")]
-        public static extern int vm_read_wrapper(uint TargetTask, ulong Address, ulong Size, out IntPtr Data, out int DataCount);
-        [DllImport("libMacOSWrapper.dylib")]
-        public static extern int mach_vm_region_recurse_wrapper(ulong ProcessPid, out ulong Offset);
-        [DllImport("libMacOSWrapper.dylib")]
-        public static extern int task_for_pid_wrapper(ulong ProcessPid, out uint Task);
-    }
     public static class Win32API
     {
         [DllImport("ntdll.dll")]
