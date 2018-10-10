@@ -50,7 +50,17 @@ namespace RockSnifferLib.RSHelpers
             //byte[] bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 }), 128);
 
             //mac
-            byte[] bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C80C, new int[] { 0x28, 0x10, 0x140 }), 128);
+            byte[] bytes;
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x0147B678, new int[] { 0xC4, 0x264, 0xBC, 0x0 }), 128);
+                    break;
+                default:
+                    bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C80C, new int[] { 0x28, 0x10, 0x140 }), 128);
+                    break;
+            }
 
             //Find the first 0 in the array
             int end = Array.IndexOf<byte>(bytes, 0);
@@ -79,10 +89,20 @@ namespace RockSnifferLib.RSHelpers
 
             // SONG TIMER
             //
-            //Weird static address: FollowPointers(0x01567AB0, new int[]{ 0x80, 0x20, 0x10C, 0x244 })
-            //Candidate #1: FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x538, 0x8 })
-            //Candidate #2: FollowPointers(0x00F5C4CC, new int[] { 0x5F0, 0x538, 0x8 })
-            ReadSongTimer(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x538, 0x8 }));
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    ReadSongTimer(FollowPointers(0x01473BFC, new int[] { 0xC, 0x698, 0xD8 }));
+                    break;
+                default:
+                    //Weird static address: FollowPointers(0x01567AB0, new int[]{ 0x80, 0x20, 0x10C, 0x244 })
+                    //Candidate #1: FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x538, 0x8 })
+                    //Candidate #2: FollowPointers(0x00F5C4CC, new int[] { 0x5F0, 0x538, 0x8 })
+                    ReadSongTimer(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x538, 0x8 }));
+                    break;
+            }
+
 
             // NOTE DATA
             //
@@ -101,74 +121,6 @@ namespace RockSnifferLib.RSHelpers
             prevReadout.songTimer = readout.songTimer;
 
             return prevReadout;
-        }
-
-        public void PointerScan(int Target, uint maxAdd, uint maxDepth)
-        {
-            //0x00F5C494, new int[] { 0xBC, 0x0 }
-            //IntPtr baseAddress = PInfo.rsProcess.MainModule.BaseAddress;
-            ulong baseAddress;
-            MacOSAPI.mach_vm_region_recurse_wrapper(PInfo.PID, out baseAddress);
-            int baseadd = (int)(baseAddress);
-            int end = 0x14dd000;//baseadd + 0x013e9000;
-            var rng = new Random();
-            List<int> addresses = new List<int>();
-            for (int address = baseadd; address <= end; address += 4)
-                addresses.Add(address);
-            Logger.Log("starting scan, searchspace: " + addresses.Count);
-            Parallel.For(0, addresses.Count, (i, loopstate) =>
-            {
-                int address = addresses[i];
-                if (rng.Next(0, 1000) < 0.10)
-                {
-                    Logger.Log(string.Format("Starting pointer scan: base: {0} end: {1}", address.ToString("X8"), end.ToString("X8")));
-                    Logger.Log(string.Format("i: {0} Total: {1}", i, addresses.Count));
-                }
-                List<int> ret = rScan(address, Target, maxAdd, maxDepth, 1);
-                if (ret.Count > 0)
-                {
-                    ret.Insert(0, address);
-                    Logger.Log("Scan Complete, Results: " + ret.Count);
-                    ret.ForEach((t) => Logger.Log(t.ToString("X8")));
-                    //loopstate.Stop();
-                }
-            });
-            //return new List<int>();
-        }
-        List<int> rScan(int address, int Target, uint maxAdd, uint maxDepth, uint currDepth)
-        {
-            //if (currDepth == 1)
-            //    Logger.Log("Base Scan: " + address.ToString("X8"));
-            //else if(currDepth <= 2)
-            //{
-            //    Logger.Log(string.Format(new String('\t', (int)currDepth) + "Depth Scan: Depth: {0} Address: {1} ", currDepth, address.ToString("X8")));
-            //}
-            int value = MemoryHelper.ReadInt32FromMemory(PInfo, new IntPtr(address));
-
-            for (int offset = 0; offset <= maxAdd; offset += 4)
-            {
-                if (value + offset == Target)
-                {
-                    Logger.Log(string.Format("Found Match Value: {0} Offset: {1} Target: {2}", value.ToString("X8"), offset, Target.ToString("X8")));
-                    return new List<int> { offset };
-                }
-            }
-            if (currDepth < maxDepth)
-            {
-                currDepth++;
-                for (int offset = 0; offset <= maxAdd; offset += 4)
-                {
-                    //Logger.Log(new String('\t', (int)currDepth) + "Offset: " + offset);
-                    List<int> ret = rScan(value + offset, Target, maxAdd, maxDepth, currDepth);
-                    if (ret.Count > 0)
-                    {
-                        ret.Insert(0, offset);
-                        return ret;
-                    }
-                }
-            }
-
-            return new List<int>();
         }
 
         ulong Offset = 0;
