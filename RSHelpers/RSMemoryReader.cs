@@ -462,16 +462,6 @@ namespace RockSnifferLib.RSHelpers
             var hhs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
             var tnm = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
             var cms = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
-            if ((tnh < 0) || (tnh > 999999)
-            || (chs < 0) || (chs > 999999)
-            || (hhs < 0) || (hhs > 999999)
-            || (tnm < 0) || (tnm > 999999)
-            || (cms < 0) || (cms > 999999)
-            )
-            {
-                readout.mode = RSMode.UNKNOWN;
-                return false;
-            }
             readout.totalNotesHit = tnh;
             readout.currentHitStreak = chs;
             readout.highestHitStreak = hhs;
@@ -535,15 +525,6 @@ namespace RockSnifferLib.RSHelpers
             var hhs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
             var tnm = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050));
             var cms = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
-            if ((tnh < 0) || (tnh > 999999)
-            || (chs < 0) || (chs > 999999)
-            || (hhs < 0) || (hhs > 999999)
-            || (tnm < 0) || (tnm > 999999)
-            || (cms < 0) || (cms > 999999))
-            {
-                readout.mode = RSMode.UNKNOWN;
-                return false;
-            }
             readout.totalNotesHit = tnh;
             readout.currentHitStreak = chs;
             readout.highestHitStreak = hhs;
