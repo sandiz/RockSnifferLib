@@ -38,6 +38,7 @@ namespace RockSnifferLib.RSHelpers
         }
 
         string lastState = "";
+        /* pointer scan is required for persistentID */
         public void DoPointerScanWin32()
         {
             if (readout.gameState.ToLower().Contains("game"))
@@ -121,6 +122,7 @@ namespace RockSnifferLib.RSHelpers
             }
         }
         /* scan memory regions looking for NOTE_DATA_MAGIC */
+        /* pointer scan is required for note_data and persistentID */
         public void DoPointerScanMacOS()
         {
             if (CheckForValidNoteDataAddress(NoteDataMacAddress))
@@ -251,48 +253,27 @@ namespace RockSnifferLib.RSHelpers
             //Candidate #2: FollowPointers(0x00F80CEC, new int[] { 0x598, 0x1B8, 0x0 })
             //Candidate #3: FollowPointers(0x00F5DAFC, new int[] { 0x608, 0x1B8, 0x0 })
 
-            //windows
-            //byte[] bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 }), 128);
-
-            //mac
-            byte[] bytes;
+            string preview_name;
             switch (Environment.OSVersion.Platform)
             {
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
                     /* more info in MacOSAPI.cs */
-                    bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x0147B678, new int[] { 0xC4, 0x264, 0xBC, 0x0 }), 128);
+                    preview_name = CreateStringFromBytes(FollowPointers(0x0147B678, new int[] { 0xC4, 0x264, 0xBC, 0x0 }), 128);
                     break;
                 default:
                     //bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C80C, new int[] { 0x28, 0x10, 0x140 }), 128);
-                    bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 }), 128);
+                    preview_name = CreateStringFromBytes(FollowPointers(0x00F5C494, new int[] { 0xBC, 0x0 }), 128);
 
                     break;
             }
-
-            //Find the first 0 in the array
-            int end = Array.IndexOf<byte>(bytes, 0);
-
-            //If there was a 0 in the array
-            if (end > 0)
+            //Verify Play_ prefix and _Preview suffix
+            if (preview_name.StartsWith("Play_") && preview_name.EndsWith("_Preview"))
             {
-                //Copy into a char array
-                char[] chars = new char[end];
-
-                Array.Copy(bytes, chars, end);
-
-                //Create string from char array
-                string preview_name = new string(chars);
-
-                //Verify Play_ prefix and _Preview suffix
-                if (preview_name.StartsWith("Play_") && preview_name.EndsWith("_Preview"))
-                {
-                    //Remove Play_ prefix and _Preview suffix
-                    string song_id = preview_name.Substring(5, preview_name.Length - 13);
-
-                    //Assign to readout
-                    readout.songID = song_id;
-                }
+                //Remove Play_ prefix and _Preview suffix
+                string song_id = preview_name.Substring(5, preview_name.Length - 13);
+                //Assign to readout
+                readout.songID = song_id;
             }
 
 
@@ -465,16 +446,11 @@ namespace RockSnifferLib.RSHelpers
             //0044 - missed note streak
 
             //Read and assign all fields
-            var tnh = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0030));
-            var chs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0034));
-            var hhs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
-            var tnm = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
-            var cms = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
-            readout.totalNotesHit = tnh;
-            readout.currentHitStreak = chs;
-            readout.highestHitStreak = hhs;
-            readout.totalNotesMissed = tnm;
-            readout.currentMissStreak = cms;
+            readout.LASData.totalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0030)); ;
+            readout.LASData.currentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0034)); ;
+            readout.LASData.highestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C)); ;
+            readout.LASData.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040)); ;
+            readout.LASData.currentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044)); ;
 
             return true;
         }
@@ -528,32 +504,19 @@ namespace RockSnifferLib.RSHelpers
             //00EC - highest multiplier
             //01D0 - current path ("Lead"/"Rhythm"/"Bass")
 
-            var tnh = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x004C));
-            var chs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
-            var hhs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
-            var tnm = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050));
-            var cms = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
-            var cphs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0074));
-            var tph = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0078));
-            var clhs = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x007c));
-            var tlh = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0080));
-            var pp = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0084));
-            var gp = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0088));
-            var passedp = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x008C));
-            var fp = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0090));
-            readout.totalNotesHit = tnh;
-            readout.currentHitStreak = chs;
-            readout.highestHitStreak = hhs;
-            readout.totalNotesMissed = tnm;
-            readout.currentMissStreak = cms;
-            readout.currentPerfectHitStreak = cphs;
-            readout.totalPerfectHits = tph;
-            readout.currentLateHitStreak = clhs;
-            readout.totalLateHits = tlh;
-            readout.perfectPhrases = pp;
-            readout.goodPhrases = gp;
-            readout.passedPhrases = passedp;
-            readout.failedPhrases = fp;
+            readout.SAData.totalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x004C)); ;
+            readout.SAData.currentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C)); ;
+            readout.SAData.highestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044)); ;
+            readout.SAData.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050)); ;
+            readout.SAData.currentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040)); ;
+            readout.SAData.currentPerfectHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0074)); ;
+            readout.SAData.totalPerfectHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0078)); ;
+            readout.SAData.currentLateHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x007C)); ;
+            readout.SAData.totalLateHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0080)); ;
+            readout.SAData.perfectPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0084)); ;
+            readout.SAData.goodPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0088)); ;
+            readout.SAData.passedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x008C)); ;
+            readout.SAData.failedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0090)); ;
 
             return true;
         }
