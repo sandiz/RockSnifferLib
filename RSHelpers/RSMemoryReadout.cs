@@ -13,8 +13,8 @@ namespace RockSnifferLib.RSHelpers
         public RSMode mode = RSMode.UNKNOWN;
         public string gameState = "";
 
-        public BasicNoteData LASData;
-        public ScoreAttackData SAData;
+        public BasicNoteData LASData = new BasicNoteData();
+        public ScoreAttackData SAData = new ScoreAttackData();
 
 
 

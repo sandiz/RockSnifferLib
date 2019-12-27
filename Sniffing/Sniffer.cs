@@ -125,12 +125,12 @@ namespace RockSnifferLib.Sniffing
                         }
                         break;
                     default:
-                        if (Math.Abs(currentMemoryReadout.songTimer - lastTimer) > 1)
-                        {
-                            // scan for note data from memory if required
-                            memReader.DoPointerScanWin32();
-                            lastTimer = currentMemoryReadout.songTimer;
-                        }
+                        //if (Math.Abs(currentMemoryReadout.songTimer - lastTimer) > 1)
+                        //{
+                        //    // scan for note data from memory if required
+                        //    memReader.DoPointerScanWin32();
+                        //    lastTimer = currentMemoryReadout.songTimer;
+                        //}
                         break;
                 }
                 //Print memreadout if debug is enabled

@@ -275,7 +275,13 @@ namespace RockSnifferLib.RSHelpers
                 //Assign to readout
                 readout.songID = song_id;
             }
-
+            
+            //PID
+            string pid = CreateStringFromBytes(FollowPointers(0x00F5C5AC, new int[] { 0x18, 0x18, 0xC, 0x1C0, 0x0 }), 128);
+            if (!string.IsNullOrEmpty(pid))
+            {
+                readout.persistentID = pid;
+            }
 
             // CURRENT STATE
             switch (Environment.OSVersion.Platform)
@@ -365,6 +371,7 @@ namespace RockSnifferLib.RSHelpers
             prevReadout.songID = readout.songID;
             prevReadout.songTimer = readout.songTimer;
             prevReadout.gameState = readout.gameState;
+            prevReadout.mode = readout.mode;
 
             return prevReadout;
         }
