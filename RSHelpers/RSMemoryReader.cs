@@ -259,7 +259,7 @@ namespace RockSnifferLib.RSHelpers
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
                     /* more info in MacOSAPI.cs */
-                    preview_name = CreateStringFromBytes(FollowPointers(0x0147B678, new int[] { 0xC4, 0x264, 0xBC, 0x0 }), 128);
+                    preview_name = preview_name = CreateStringFromBytes(FollowPointers(0x018FA000, new int[] { 0xE8, 0x0 }), 128);
                     break;
                 default:
                     //bytes = MemoryHelper.ReadBytesFromMemory(PInfo, FollowPointers(0x00F5C80C, new int[] { 0x28, 0x10, 0x140 }), 128);
@@ -275,7 +275,13 @@ namespace RockSnifferLib.RSHelpers
                 //Assign to readout
                 readout.songID = song_id;
             }
-            
+            else if (preview_name.StartsWith("Song_") && preview_name.EndsWith("_Preview.bnk"))
+            {
+                string song_id = preview_name.Substring(5, preview_name.Length - 17);
+                //Assign to readout
+                readout.songID = song_id;
+            }
+
             //PID
             string pid = CreateStringFromBytes(FollowPointers(0x00F5C5AC, new int[] { 0x18, 0x18, 0xC, 0x1C0, 0x0 }), 128);
             if (!string.IsNullOrEmpty(pid))
@@ -288,7 +294,9 @@ namespace RockSnifferLib.RSHelpers
             {
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
-                    // IMPLEMENT
+                    string p = CreateStringFromBytes(FollowPointers(0x018FA9B8, new int[] { 0x48, 0xE0, 0 }), 128);
+                    if (!string.IsNullOrEmpty(p))
+                        readout.gameState = p;
                     break;
                 default:
                     string s = CreateStringFromBytes(FollowPointers(0x00F5C5AC, new int[] { 0x28, 0x8C, 0x0 }), 255);
@@ -306,28 +314,18 @@ namespace RockSnifferLib.RSHelpers
                 case PlatformID.Unix:
                     /* more info in MacOSAPI.cs */
                     ReadSongTimer(FollowPointers(0x01473BFC, new int[] { 0xC, 0x698, 0xD8 }));
-                    IntPtr noteDataRoot = IntPtr.Subtract(NoteDataMacAddress, 0x0008);
-                    if (CheckForValidNoteDataAddress(NoteDataMacAddress))
+                    if (readout.gameState.ToLower().Contains("learnasong"))
                     {
-                        if (!ReadNoteData(noteDataRoot))
-                        {
-                            if (!ReadScoreAttackNoteData(noteDataRoot))
-                            {
-                                if (NDAddressStack.Count > 0)
-                                {
-                                    Logger.Log("trying other address");
-                                    NoteDataMacAddress = NDAddressStack.Dequeue();
-                                }
-                                else
-                                {
-                                    Logger.Log("queue empty, starting scan");
-                                    NoteDataMacAddress = IntPtr.Zero;
-                                    NDAddressStack.Clear();
-                                }
-                                readout.mode = RSMode.UNKNOWN;
-                            }
-                        }
+                        readout.mode = RSMode.LEARNASONG;
+                        ReadNoteData(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x18, 0x4, 0x84, 0x0 }));
                     }
+                    else if (readout.gameState.ToLower().Contains("scoreattack"))
+                    {
+                        readout.mode = RSMode.SCOREATTACK;
+                        ReadScoreAttackNoteData(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x18, 0x4, 0x4C, 0x0 }));
+                    }
+                    else
+                        readout.mode = RSMode.UNKNOWN;
                     break;
                 default:
                     //Weird static address: FollowPointers(0x01567AB0, new int[]{ 0x80, 0x20, 0x10C, 0x244 })
@@ -375,7 +373,6 @@ namespace RockSnifferLib.RSHelpers
 
             return prevReadout;
         }
-
         ulong Offset = 0;
         private IntPtr FollowPointers(int entryAddress, int[] offsets)
         {

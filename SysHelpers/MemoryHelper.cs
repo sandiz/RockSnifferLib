@@ -102,6 +102,17 @@ namespace RockSnifferLib.SysHelpers
         }
 
         /// <summary>
+        /// Reads an Int64 from a processes memory
+        /// </summary>
+        /// <param name="processHandle"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public static Int64 ReadInt64FromMemory(ProcessInfo processHandle, IntPtr address)
+        {
+            return BitConverter.ToInt64(ReadBytesFromMemory(processHandle, address, 8), 0);
+        }
+
+        /// <summary>
         /// Reads a single byte from a processes memory
         /// </summary>
         /// <param name="processHandle"></param>
@@ -124,9 +135,16 @@ namespace RockSnifferLib.SysHelpers
         public static IntPtr FollowPointer(ProcessInfo processHandle, IntPtr address, int offset)
         {
             //Logger.Log(string.Format("PreFollow Pointer: Address:{0} offset: {1}", address.ToString("X8"), offset));
-            IntPtr readPointer = (IntPtr)ReadInt32FromMemory(processHandle, address);
-
-            return IntPtr.Add(readPointer, offset);
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    IntPtr readPointer64 = (IntPtr)ReadInt64FromMemory(processHandle, address);
+                    return IntPtr.Add(readPointer64, offset);
+                default:
+                    IntPtr readPointer = (IntPtr)ReadInt32FromMemory(processHandle, address);
+                    return IntPtr.Add(readPointer, offset);
+            }
         }
 
         /// <summary>
