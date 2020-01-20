@@ -125,7 +125,7 @@ namespace RockSnifferLib.RSHelpers
         /* pointer scan is required for note_data and persistentID */
         public void DoPointerScanMacOS()
         {
-            if (CheckForValidNoteDataAddress(NoteDataMacAddress))
+            if (CheckForValidNoteDataAddress(NoteDataMacAddress) || !string.IsNullOrEmpty(readout.persistentID))
                 return;
             int itemsFound = 0;
             ulong beginAddress = 0x0;
@@ -279,14 +279,24 @@ namespace RockSnifferLib.RSHelpers
             {
                 string song_id = preview_name.Substring(5, preview_name.Length - 17);
                 //Assign to readout
+                if (song_id != readout.songID)
+                    readout.persistentID = string.Empty;
                 readout.songID = song_id;
             }
 
-            //PID
-            string pid = CreateStringFromBytes(FollowPointers(0x00F5C5AC, new int[] { 0x18, 0x18, 0xC, 0x1C0, 0x0 }), 128);
-            if (!string.IsNullOrEmpty(pid))
+            switch (Environment.OSVersion.Platform)
             {
-                readout.persistentID = pid;
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    break;
+                default:
+                    //PID
+                    string pid = CreateStringFromBytes(FollowPointers(0x00F5C5AC, new int[] { 0x18, 0x18, 0xC, 0x1C0, 0x0 }), 128);
+                    if (!string.IsNullOrEmpty(pid))
+                    {
+                        readout.persistentID = pid;
+                    }
+                    break;
             }
 
             // CURRENT STATE
@@ -313,16 +323,16 @@ namespace RockSnifferLib.RSHelpers
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
                     /* more info in MacOSAPI.cs */
-                    ReadSongTimer(FollowPointers(0x01473BFC, new int[] { 0xC, 0x698, 0xD8 }));
+                    ReadSongTimer(FollowPointers(0x018EE728, new int[] { 0x184 }));
                     if (readout.gameState.ToLower().Contains("learnasong"))
                     {
                         readout.mode = RSMode.LEARNASONG;
-                        ReadNoteData(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x18, 0x4, 0x84, 0x0 }));
+                        //ReadNoteData(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x18, 0x4, 0x84, 0x0 }));
                     }
                     else if (readout.gameState.ToLower().Contains("scoreattack"))
                     {
                         readout.mode = RSMode.SCOREATTACK;
-                        ReadScoreAttackNoteData(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x18, 0x4, 0x4C, 0x0 }));
+                        //ReadScoreAttackNoteData(FollowPointers(0x00F5C5AC, new int[] { 0xB0, 0x18, 0x4, 0x4C, 0x0 }));
                     }
                     else
                         readout.mode = RSMode.UNKNOWN;
