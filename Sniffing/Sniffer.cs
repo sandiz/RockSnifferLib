@@ -117,7 +117,7 @@ namespace RockSnifferLib.Sniffing
                 {
                     case PlatformID.MacOSX:
                     case PlatformID.Unix:
-                        if (Math.Abs(currentMemoryReadout.songTimer - lastTimer) > 1)
+                        if (currentMemoryReadout.gameState.ToLower().Contains("game") && Math.Abs(currentMemoryReadout.songTimer - lastTimer) > 1)
                         {
                             // scan for note data from memory if required
                             memReader.DoPointerScanMacOS();
