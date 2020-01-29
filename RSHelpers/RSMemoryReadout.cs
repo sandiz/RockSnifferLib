@@ -100,7 +100,10 @@ namespace RockSnifferLib.RSHelpers
                 copy.LASData.currentMissStreak = currentMissStreak;
             }
         }
-
+        public virtual void Clear()
+        {
+            totalNotesHit = currentHitStreak = highestHitStreak = totalNotesMissed = currentHitStreak = 0;
+        }
     }
     public class ScoreAttackData : BasicNoteData
     {
@@ -114,6 +117,12 @@ namespace RockSnifferLib.RSHelpers
         public int passedPhrases = 0;
         public int failedPhrases = 0;
 
+        public override void Clear()
+        {
+            base.Clear();
+            currentPerfectHitStreak = totalPerfectHits = currentLateHitStreak = totalLateHits = currentHitStreak = 0;
+            perfectPhrases = goodPhrases = passedPhrases = failedPhrases = 0;
+        }
         public override void Print(float songTimer)
         {
             Logger.Log("t: {0}, hits: {1}, misses: {2} streak: {3}, hstreak: {4}, mstreak:{5}", songTimer, totalNotesHit, totalNotesMissed,
