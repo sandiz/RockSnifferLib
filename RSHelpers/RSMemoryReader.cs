@@ -198,7 +198,7 @@ namespace RockSnifferLib.RSHelpers
                         UInt32 tag = MemoryHelper.GetUserTag(this.PInfo, address, size);
                         IntPtr root = IntPtr.Subtract(ptr, 0x000C);
                         int rootMagic = MemoryHelper.ReadInt32FromMemory(this.PInfo, root);
-                        if (CheckForValidNoteDataAddress(ptr) && rootMagic > 0)
+                        if (CheckForValidNoteDataAddress(ptr, true) && rootMagic > 0)
                         {
                             // VM_MEMORY_MALLOC_SMALL == 2
                             // VM_MEMORY_MALLOC_SMALL == 7
@@ -216,6 +216,7 @@ namespace RockSnifferLib.RSHelpers
                                     RootMagic = rootMagic,
                                     Tag = tag
                                 });
+                                Logger.Log("Added to stack");
                             }
                             else if (tag == 7 && readout.mode == RSMode.SCOREATTACK)
                             {
@@ -228,6 +229,7 @@ namespace RockSnifferLib.RSHelpers
                                     RootMagic = rootMagic,
                                     Tag = tag
                                 });
+                                Logger.Log("Added to stack");
                             }
                         }
                     }
@@ -268,13 +270,20 @@ namespace RockSnifferLib.RSHelpers
                         }
                     }
                 }
-                Logger.Log($"Smallest diff pair: {NDAddressStack[addrIdx1].Root.ToString("X8")} ({d1}) {NDAddressStack[addrIdx2].Root.ToString("X8")} ({d2})");
-                NoteDataMacAddress_LAS = NDAddressStack[addrIdx1].Ptr;
-                NoteDataMacAddress_SA = NDAddressStack[addrIdx2].Ptr;
-                if (Logger.logMemoryReadout)
+                if (addrIdx1 != -1 && addrIdx2 != -1)
                 {
-                    Logger.Log($"LAS NoteData Root:  {NDAddressStack[addrIdx1].Root.ToString("X8")} RM: {NDAddressStack[addrIdx1].RootMagic} Tag: {NDAddressStack[addrIdx1].Tag}");
-                    Logger.Log($"SA NoteData Root:  {NDAddressStack[addrIdx2].Root.ToString("X8")} RM: {NDAddressStack[addrIdx2].RootMagic} Tag: {NDAddressStack[addrIdx2].Tag}");
+                    Logger.Log($"Smallest diff pair: {NDAddressStack[addrIdx1].Root.ToString("X8")} ({d1}) {NDAddressStack[addrIdx2].Root.ToString("X8")} ({d2})");
+                    NoteDataMacAddress_LAS = NDAddressStack[addrIdx1].Ptr;
+                    NoteDataMacAddress_SA = NDAddressStack[addrIdx2].Ptr;
+                    if (Logger.logMemoryReadout)
+                    {
+                        Logger.Log($"LAS NoteData Root:  {NDAddressStack[addrIdx1].Root.ToString("X8")} RM: {NDAddressStack[addrIdx1].RootMagic} Tag: {NDAddressStack[addrIdx1].Tag}");
+                        Logger.Log($"SA NoteData Root:  {NDAddressStack[addrIdx2].Root.ToString("X8")} RM: {NDAddressStack[addrIdx2].RootMagic} Tag: {NDAddressStack[addrIdx2].Tag}");
+                    }
+                }
+                else
+                {
+                    Logger.Log("No valid address found, stack count: " + NDAddressStack.Count);
                 }
             }
             GC.Collect();
@@ -283,16 +292,53 @@ namespace RockSnifferLib.RSHelpers
         }
 
         /* check if the NoteData address is accurate or not */
-        public bool CheckForValidNoteDataAddress(IntPtr address)
+        public bool CheckForValidNoteDataAddress(IntPtr address, bool validateFields = false)
         {
             if (address == IntPtr.Zero)
                 return false;
             int val = MemoryHelper.ReadInt32FromMemory(this.PInfo, address);
             IntPtr newaddress = IntPtr.Subtract(address, 0x000C);
-            bool ret = true; // newaddress.ToString("X8").EndsWith("0");
+            bool ret = false; // check if all fields have valid values
+            if (validateFields)
+            {
+                if (readout.mode == RSMode.LEARNASONG)
+                {
+                    if (ReadNoteData(newaddress)
+                        && readout.LASData.TotalNotesMissed == 0
+                        && readout.LASData.TotalNotesHit == 0
+                        && readout.LASData.CurrentHitStreak == 0
+                        && readout.LASData.CurrentMissStreak == 0
+                        && readout.LASData.HighestHitStreak == 0)
+                        ret = true;
+                    readout.LASData.Clear();
+                    readout.SAData.Clear();
+                }
+                else if (readout.mode == RSMode.SCOREATTACK)
+                {
+                    if (
+                        ReadScoreAttackNoteData(newaddress)
+                        && readout.SAData.CurrentPerfectHitStreak == 0
+                        && readout.SAData.TotalPerfectHits == 0
+                        && readout.SAData.CurrentLateHitStreak == 0
+                        && readout.SAData.TotalLateHits == 0
+                        && readout.SAData.PerfectPhrases == 0
+                        && readout.SAData.GoodPhrases == 0
+                        && readout.SAData.PassedPhrases == 0
+                        && readout.SAData.FailedPhrases == 0
+                        )
+                        ret = true;
+                    readout.LASData.Clear();
+                    readout.SAData.Clear();
+                }
+            }
             /*  magic number 111000 */
-            if (val == NOTE_DATA_MAGIC && ret)
-                return true;
+            if (val == NOTE_DATA_MAGIC)
+            {
+                if (validateFields)
+                    return ret;
+                else
+                    return true;
+            }
             return false;
         }
 
@@ -430,11 +476,11 @@ namespace RockSnifferLib.RSHelpers
                         }
                         readout.mode = RSMode.SCOREATTACK;
                         ReadNoteData(noteDataRoot);
-                        readout.SAData.totalNotesHit = readout.LASData.totalNotesHit;
-                        readout.SAData.currentHitStreak = readout.LASData.currentHitStreak;
-                        readout.SAData.highestHitStreak = readout.LASData.highestHitStreak;
-                        readout.SAData.totalNotesMissed = readout.LASData.totalNotesMissed;
-                        readout.SAData.currentMissStreak = readout.LASData.currentMissStreak;
+                        readout.SAData.TotalNotesHit = readout.LASData.TotalNotesHit;
+                        readout.SAData.CurrentHitStreak = readout.LASData.CurrentHitStreak;
+                        readout.SAData.HighestHitStreak = readout.LASData.HighestHitStreak;
+                        readout.SAData.TotalNotesMissed = readout.LASData.TotalNotesMissed;
+                        readout.SAData.CurrentMissStreak = readout.LASData.CurrentMissStreak;
                         ReadScoreAttackNoteData(noteDataSARoot);
                     }
                     else
@@ -578,19 +624,19 @@ namespace RockSnifferLib.RSHelpers
             {
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
-                    readout.LASData.totalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
-                    readout.LASData.currentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
-                    readout.LASData.highestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x004C));
-                    readout.LASData.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050));
-                    readout.LASData.currentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0054));
+                    readout.LASData.TotalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
+                    readout.LASData.CurrentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
+                    readout.LASData.HighestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x004C));
+                    readout.LASData.TotalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050));
+                    readout.LASData.CurrentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0054));
 
                     break;
                 default:
-                    readout.LASData.totalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0030));
-                    readout.LASData.currentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0034));
-                    readout.LASData.highestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
-                    readout.LASData.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
-                    readout.LASData.currentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
+                    readout.LASData.TotalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0030));
+                    readout.LASData.CurrentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0034));
+                    readout.LASData.HighestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
+                    readout.LASData.TotalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
+                    readout.LASData.CurrentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
 
                     break;
             }
@@ -663,29 +709,29 @@ namespace RockSnifferLib.RSHelpers
             {
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
-                    readout.SAData.currentPerfectHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0090));
-                    readout.SAData.totalPerfectHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0094));
-                    readout.SAData.currentLateHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0098));
-                    readout.SAData.totalLateHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x009C));
-                    readout.SAData.perfectPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00A0));
-                    readout.SAData.goodPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00A4));
-                    readout.SAData.passedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00A8));
-                    readout.SAData.failedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00AC));
+                    readout.SAData.CurrentPerfectHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0090));
+                    readout.SAData.TotalPerfectHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0094));
+                    readout.SAData.CurrentLateHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0098));
+                    readout.SAData.TotalLateHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x009C));
+                    readout.SAData.PerfectPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00A0));
+                    readout.SAData.GoodPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00A4));
+                    readout.SAData.PassedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00A8));
+                    readout.SAData.FailedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x00AC));
                     break;
                 default:
-                    readout.SAData.totalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x004C));
-                    readout.SAData.currentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
-                    readout.SAData.currentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
-                    readout.SAData.highestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
-                    readout.SAData.totalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050));
-                    readout.SAData.currentPerfectHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0074));
-                    readout.SAData.totalPerfectHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0078));
-                    readout.SAData.currentLateHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x007C));
-                    readout.SAData.totalLateHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0080));
-                    readout.SAData.perfectPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0084));
-                    readout.SAData.goodPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0088));
-                    readout.SAData.passedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x008C));
-                    readout.SAData.failedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0090));
+                    readout.SAData.TotalNotesHit = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x004C));
+                    readout.SAData.CurrentHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x003C));
+                    readout.SAData.CurrentMissStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0040));
+                    readout.SAData.HighestHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0044));
+                    readout.SAData.TotalNotesMissed = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0050));
+                    readout.SAData.CurrentPerfectHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0074));
+                    readout.SAData.TotalPerfectHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0078));
+                    readout.SAData.CurrentLateHitStreak = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x007C));
+                    readout.SAData.TotalLateHits = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0080));
+                    readout.SAData.PerfectPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0084));
+                    readout.SAData.GoodPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0088));
+                    readout.SAData.PassedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x008C));
+                    readout.SAData.FailedPhrases = MemoryHelper.ReadInt32FromMemory(PInfo, IntPtr.Add(structAddress, 0x0090));
                     break;
             }
             return true;

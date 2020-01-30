@@ -1,5 +1,6 @@
 ﻿using RockSnifferLib.Logging;
 using System;
+using Newtonsoft.Json;
 
 namespace RockSnifferLib.RSHelpers
 {
@@ -13,9 +14,18 @@ namespace RockSnifferLib.RSHelpers
         public RSMode mode = RSMode.UNKNOWN;
         public string gameState = "";
 
+        [JsonIgnore]
         public BasicNoteData LASData = new BasicNoteData();
+        [JsonIgnore]
         public ScoreAttackData SAData = new ScoreAttackData();
 
+        public BasicNoteData noteData
+        {
+            get
+            {
+                return mode == RSMode.SCOREATTACK ? SAData : LASData;
+            }
+        }
 
 
         /// <summary>
@@ -71,84 +81,84 @@ namespace RockSnifferLib.RSHelpers
     }
     public class BasicNoteData
     {
-        public int totalNotesHit = 0;
-        public int currentHitStreak = 0;
-        public int highestHitStreak = 0;
-        public int totalNotesMissed = 0;
-        public int currentMissStreak = 0;
+        public int TotalNotesHit = 0;
+        public int CurrentHitStreak = 0;
+        public int HighestHitStreak = 0;
+        public int TotalNotesMissed = 0;
+        public int CurrentMissStreak = 0;
         public int TotalNotes
         {
             get
             {
-                return totalNotesMissed + totalNotesHit;
+                return TotalNotesMissed + TotalNotesHit;
             }
         }
         public virtual void Print(float songTimer)
         {
-            Logger.Log("t: {0}, hits: {1}, misses: {2} streak: {3}, hstreak: {4}, mstreak:{5}", songTimer, totalNotesHit, totalNotesMissed,
-                currentHitStreak, highestHitStreak, currentMissStreak);
+            Logger.Log("t: {0}, hits: {1}, misses: {2} streak: {3}, hstreak: {4}, mstreak:{5}", songTimer, TotalNotesHit, TotalNotesMissed,
+                CurrentHitStreak, HighestHitStreak, CurrentMissStreak);
         }
 
         public virtual void CopyTo(ref RSMemoryReadout copy)
         {
             if (copy.mode == RSMode.LEARNASONG)
             {
-                copy.LASData.totalNotesHit = totalNotesHit;
-                copy.LASData.currentHitStreak = currentHitStreak;
-                copy.LASData.highestHitStreak = highestHitStreak;
-                copy.LASData.totalNotesMissed = totalNotesMissed;
-                copy.LASData.currentMissStreak = currentMissStreak;
+                copy.LASData.TotalNotesHit = TotalNotesHit;
+                copy.LASData.CurrentHitStreak = CurrentHitStreak;
+                copy.LASData.HighestHitStreak = HighestHitStreak;
+                copy.LASData.TotalNotesMissed = TotalNotesMissed;
+                copy.LASData.CurrentMissStreak = CurrentMissStreak;
             }
         }
         public virtual void Clear()
         {
-            totalNotesHit = currentHitStreak = highestHitStreak = totalNotesMissed = currentHitStreak = 0;
+            TotalNotesHit = CurrentHitStreak = HighestHitStreak = TotalNotesMissed = CurrentHitStreak = 0;
         }
     }
     public class ScoreAttackData : BasicNoteData
     {
         /* Score Attack Fields */
-        public int currentPerfectHitStreak = 0;
-        public int totalPerfectHits = 0;
-        public int currentLateHitStreak = 0;
-        public int totalLateHits = 0;
-        public int perfectPhrases = 0;
-        public int goodPhrases = 0;
-        public int passedPhrases = 0;
-        public int failedPhrases = 0;
+        public int CurrentPerfectHitStreak = 0;
+        public int TotalPerfectHits = 0;
+        public int CurrentLateHitStreak = 0;
+        public int TotalLateHits = 0;
+        public int PerfectPhrases = 0;
+        public int GoodPhrases = 0;
+        public int PassedPhrases = 0;
+        public int FailedPhrases = 0;
 
         public override void Clear()
         {
             base.Clear();
-            currentPerfectHitStreak = totalPerfectHits = currentLateHitStreak = totalLateHits = currentHitStreak = 0;
-            perfectPhrases = goodPhrases = passedPhrases = failedPhrases = 0;
+            CurrentPerfectHitStreak = TotalPerfectHits = CurrentLateHitStreak = TotalLateHits = CurrentHitStreak = 0;
+            PerfectPhrases = GoodPhrases = PassedPhrases = FailedPhrases = 0;
         }
         public override void Print(float songTimer)
         {
-            Logger.Log("t: {0}, hits: {1}, misses: {2} streak: {3}, hstreak: {4}, mstreak:{5}", songTimer, totalNotesHit, totalNotesMissed,
-                     currentHitStreak, highestHitStreak, currentMissStreak);
-            Logger.Log("cphstreak: {0} totalPerfect: {1} clstreak: {2} totalLate: {3}", currentPerfectHitStreak, totalPerfectHits, currentLateHitStreak, totalLateHits);
-            Logger.Log("Phrases passed: {0} failed: {1} good: {2} perfect: {3}", passedPhrases, failedPhrases, goodPhrases, perfectPhrases);
+            Logger.Log("t: {0}, hits: {1}, misses: {2} streak: {3}, hstreak: {4}, mstreak:{5}", songTimer, TotalNotesHit, TotalNotesMissed,
+                     CurrentHitStreak, HighestHitStreak, CurrentMissStreak);
+            Logger.Log("cphstreak: {0} totalPerfect: {1} clstreak: {2} totalLate: {3}", CurrentPerfectHitStreak, TotalPerfectHits, CurrentLateHitStreak, TotalLateHits);
+            Logger.Log("Phrases passed: {0} failed: {1} good: {2} perfect: {3}", PassedPhrases, FailedPhrases, GoodPhrases, PerfectPhrases);
         }
         public override void CopyTo(ref RSMemoryReadout copy)
         {
             if (copy.mode == RSMode.SCOREATTACK)
             {
-                copy.SAData.totalNotesHit = totalNotesHit;
-                copy.SAData.currentHitStreak = currentHitStreak;
-                copy.SAData.highestHitStreak = highestHitStreak;
-                copy.SAData.totalNotesMissed = totalNotesMissed;
-                copy.SAData.currentMissStreak = currentMissStreak;
+                copy.SAData.TotalNotesHit = TotalNotesHit;
+                copy.SAData.CurrentHitStreak = CurrentHitStreak;
+                copy.SAData.HighestHitStreak = HighestHitStreak;
+                copy.SAData.TotalNotesMissed = TotalNotesMissed;
+                copy.SAData.CurrentMissStreak = CurrentMissStreak;
 
-                copy.SAData.currentPerfectHitStreak = currentPerfectHitStreak;
-                copy.SAData.totalPerfectHits = totalPerfectHits;
-                copy.SAData.currentLateHitStreak = currentLateHitStreak;
-                copy.SAData.totalLateHits = totalLateHits;
+                copy.SAData.CurrentPerfectHitStreak = CurrentPerfectHitStreak;
+                copy.SAData.TotalPerfectHits = TotalPerfectHits;
+                copy.SAData.CurrentLateHitStreak = CurrentLateHitStreak;
+                copy.SAData.TotalLateHits = TotalLateHits;
 
-                copy.SAData.passedPhrases = passedPhrases;
-                copy.SAData.failedPhrases = failedPhrases;
-                copy.SAData.goodPhrases = goodPhrases;
-                copy.SAData.perfectPhrases = perfectPhrases;
+                copy.SAData.PassedPhrases = PassedPhrases;
+                copy.SAData.FailedPhrases = FailedPhrases;
+                copy.SAData.GoodPhrases = GoodPhrases;
+                copy.SAData.PerfectPhrases = PerfectPhrases;
             }
         }
     }
